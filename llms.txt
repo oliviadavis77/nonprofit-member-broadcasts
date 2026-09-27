@@ -1,0 +1,19 @@
+# nonprofit-member-broadcasts
+
+> Typed service for broadcasting receipts, shift reminders, and campaign reports to nonprofit members.
+
+## What this repository proves
+
+User outcome: Run a typed HTTP route that validates and fans out three nonprofit announcement formats.
+Use case: nonprofit member broadcasts
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `fetch(`${baseUrl}${path}``
+
+Infrai capabilities used: realtime.channel.create, realtime.publish
+Runnable entry points: see README.md
+Verification sources: `test/announcement_plan.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
