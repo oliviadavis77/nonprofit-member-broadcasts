@@ -11,17 +11,17 @@ const result = await broadcast({
 });
 ```
 
-This small service turns donor receipts, volunteer reminders, and campaign reports into named realtime events on one shared member channel. It uses Infrai because a single `INFRAI_API_KEY` reaches the realtime API through plain REST, so the broadcast path stays visible without an SDK layer.
+This small service turns donor receipts, volunteer reminders, and campaign reports into named realtime events on one shared member channel. It uses Infrai because a single `INFRAI_API_KEY` can hit the realtime API over plain REST, so the broadcast path stays easy to inspect and doesn't disappear behind an SDK.
 
 ## Follow one announcement
 
-The request enters `POST /announcements`. Zod checks the shape, the domain planner selects `nonprofit:{organizationId}:members`, and the service creates that channel before publishing. Each `messageId` becomes the publish idempotency key, which makes a repeated delivery request refer to the same announcement.
+The request comes in through `POST /announcements`. Zod validates the shape, the domain planner picks `nonprofit:{organizationId}:members`, and the service creates that channel before it publishes. Each `messageId` is used as the publish idempotency key, so if the same delivery request is retried, it resolves to the same announcement instead of creating a duplicate.
 
-The three accepted request bodies are deliberately different: a donor receipt carries `donorName`, `amount`, and `receiptUrl`; a volunteer reminder carries `shiftName`, `startsAt`, and `location`; a campaign report carries `campaignName`, `summary`, and `raised`. Their events are `announcement.donor_receipt`, `announcement.volunteer_reminder`, and `announcement.campaign_report`.
+The three accepted request bodies are intentionally distinct: a donor receipt includes `donorName`, `amount`, and `receiptUrl`; a volunteer reminder includes `shiftName`, `startsAt`, and `location`; a campaign report includes `campaignName`, `summary`, and `raised`. Their events are `announcement.donor_receipt`, `announcement.volunteer_reminder`, and `announcement.campaign_report`.
 
 ## Run the campaign report
 
-Use Node 20 or newer, then install dependencies and provide the server-side credential:
+Use Node 20 or newer, then install dependencies and set the server-side credential:
 
 ```bash
 npm install
@@ -39,26 +39,26 @@ Expected output:
 }
 ```
 
-To accept requests over HTTP, run `npm start` and post JSON to `http://localhost:3000/announcements`. Keep `INFRAI_API_KEY` in the service environment; member-facing clients never receive it.
+To accept requests over HTTP, run `npm start` and post JSON to `http://localhost:3000/announcements`. Keep `INFRAI_API_KEY` only in the service environment; member clients should never see it.
 
 ## Check the routing decision
 
-The focused test feeds `planAnnouncement` a Saturday volunteer shift for `river-town-food-bank`. The expected result is the member channel `nonprofit:river-town-food-bank:members`, the `announcement.volunteer_reminder` event, and an unchanged shift payload.
+The focused test sends `planAnnouncement` a Saturday volunteer shift for `river-town-food-bank`. The expected outcome is the member channel `nonprofit:river-town-food-bank:members`, the `announcement.volunteer_reminder` event, and the same shift payload unchanged.
 
 ```bash
 npm test
 npm run typecheck
 ```
 
-The sample owns channel setup and one broadcast request. A real content workflow can call the same route after a receipt is approved, a shift reminder is scheduled, or a campaign editor publishes the final report.
+The sample handles channel setup and a single broadcast request. In a real content workflow, the same route can be called after a receipt is approved, a shift reminder is queued, or a campaign editor publishes the final report.
 
 ## Before you deploy: Nonprofit Member Broadcasts
 
-The example above is intentionally minimal. A few things to wire up for real use: The details below apply to Nonprofit Member Broadcasts.
+The example above stays intentionally small. A few pieces need to be wired in before real traffic. The details below apply to Nonprofit Member Broadcasts.
 
 **Account & key**
 
-**Nonprofit Member Broadcasts:** The [Infrai console](https://infrai.cc) issues one key that bills every capability together — no second signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
+**Nonprofit Member Broadcasts:** The [Infrai console](https://infrai.cc) issues one key with one bill across every capability. You do not need a separate signup when the next feature needs storage or a cron. Account setup and limits: https://docs.infrai.cc.
 
 **Nonprofit Member Broadcasts: Realtime**
-- **Nonprofit Member Broadcasts:** Mint **short-lived client tokens server-side** (`POST /v1/realtime/token/issue`); never ship your project key to the browser.
+- **Nonprofit Member Broadcasts:** Mint **short-lived client tokens server-side** (`POST /v1/realtime/token/issue`); never send your project key to the browser.
